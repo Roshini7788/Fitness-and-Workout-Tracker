@@ -90,6 +90,7 @@ const app = {
   async checkDatabaseHealth() {
     const statusDot = document.getElementById('db-status-dot');
     const statusText = document.getElementById('db-status-text');
+    const authDbAlert = document.getElementById('auth-db-alert');
 
     try {
       const res = await fetch('/api/health');
@@ -101,16 +102,19 @@ const app = {
           statusDot.title = `Connected to ${data.database.host}/${data.database.name}`;
         }
         if (statusText) statusText.textContent = 'MongoDB Connected';
+        if (authDbAlert) authDbAlert.style.display = 'none';
       } else {
         if (statusDot) {
           statusDot.className = 'status-dot offline';
           statusDot.title = 'MongoDB is not connected. Check .env and local mongod service.';
         }
         if (statusText) statusText.textContent = 'MongoDB Disconnected';
+        if (authDbAlert) authDbAlert.style.display = 'block';
       }
     } catch (e) {
       if (statusDot) statusDot.className = 'status-dot offline';
       if (statusText) statusText.textContent = 'Backend Offline';
+      if (authDbAlert) authDbAlert.style.display = 'block';
     }
   },
 
