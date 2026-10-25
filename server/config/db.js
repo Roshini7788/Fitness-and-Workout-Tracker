@@ -1,11 +1,25 @@
 const mongoose = require('mongoose');
 
+let cachedConnection = null;
+
 const connectDB = async () => {
+  // If already connected, return existing connection
+  if (mongoose.connection.readyState === 1) {
+    return mongoose.connection;
+  }
+
+  // If connection is in progress, reuse the existing promise
+  if (cachedConnection) {
+    return cachedConnection;
+  }
+
   const uri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/fittrack';
   try {
-    const conn = await mongoose.connect(uri, {
+    cachedConnection = mongoose.connect(uri, {
       serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of hanging
     });
+
+    const conn = await cachedConnection;
 
     console.log(`\n=============================================`);
     console.log(`🟢 MongoDB Connected: ${conn.connection.host}`);
@@ -13,6 +27,7 @@ const connectDB = async () => {
     console.log(`=============================================\n`);
     return conn;
   } catch (error) {
+    cachedConnection = null;
     console.error(`\n=============================================`);
     console.error(`🔴 MongoDB Connection Error: ${error.message}`);
     console.error(`---------------------------------------------`);

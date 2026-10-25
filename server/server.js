@@ -34,7 +34,12 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, '../client')));
 
 // Health check endpoint
-app.get('/api/health', (req, res) => {
+app.get('/api/health', async (req, res) => {
+  if (mongoose.connection.readyState !== 1) {
+    try {
+      await connectDB();
+    } catch (e) {}
+  }
   const dbState = mongoose.connection.readyState;
   const dbStatusMap = {
     0: 'Disconnected',
@@ -78,13 +83,16 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
-const server = app.listen(PORT, () => {
-  console.log(`\n=============================================`);
-  console.log(`🚀 FitTrack Server running on port ${PORT}`);
-  console.log(`🌐 Local URL: http://localhost:${PORT}`);
-  console.log(`⚡ Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`=============================================\n`);
-});
+// Only listen on port when running standalone locally (not in serverless environment)
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`\n=============================================`);
+    console.log(`🚀 FitTrack Server running on port ${PORT}`);
+    console.log(`🌐 Local URL: http://localhost:${PORT}`);
+    console.log(`⚡ Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`=============================================\n`);
+  });
+}
 
 // Handle unhandled promise rejections gracefully
 process.on('unhandledRejection', (err) => {
