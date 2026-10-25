@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FitTrack – Full Stack Fitness & Workout Tracker</title>
+  <meta name="description" content="FitTrack is a modern fitness dashboard to log workouts, calculate calories burned, monitor weekly goals, and analyze fitness progress." />
+
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- FontAwesome Icons CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="css/styles.css" />
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container"></div>
+
+  <!-- =========================================================================
+       1. AUTHENTICATION VIEW (Visible when user is not signed in)
+       ========================================================================= -->
+  <div id="auth-wrapper" class="auth-wrapper">
+    <div class="auth-card">
+      <div class="auth-brand">
+        <div class="brand-icon">
+          <i class="fa-solid fa-bolt"></i>
+        </div>
+        <h2>Fit<span>Track</span></h2>
+        <p>Your Complete Workout & Fitness Companion</p>
+      </div>
+
+      <!-- Auth Switch Tabs -->
+      <div class="auth-tabs">
+        <button type="button" id="tab-btn-login" class="auth-tab-btn active">Sign In</button>
+        <button type="button" id="tab-btn-register" class="auth-tab-btn">Create Account</button>
+      </div>
+
+      <!-- Sign In Form -->
+      <form id="login-form">
+        <div class="form-group">
+          <label class="form-label" for="login-email">Email Address</label>
+          <input type="email" id="login-email" name="email" class="form-control" placeholder="name@example.com" required autocomplete="email" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="login-password">Password</label>
+          <input type="password" id="login-password" name="password" class="form-control" placeholder="••••••••" required autocomplete="current-password" />
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">
+          <i class="fa-solid fa-arrow-right-to-bracket"></i> Sign In to Dashboard
+        </button>
+      </form>
+
+      <!-- Register Form -->
+      <form id="register-form" style="display: none;">
+        <div class="form-group">
+          <label class="form-label" for="register-name">Full Name</label>
+          <input type="text" id="register-name" name="name" class="form-control" placeholder="Alex Morgan" required autocomplete="name" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="register-email">Email Address</label>
+          <input type="email" id="register-email" name="email" class="form-control" placeholder="alex@example.com" required autocomplete="email" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="register-password">Password (min 6 characters)</label>
+          <input type="password" id="register-password" name="password" class="form-control" placeholder="••••••••" required minlength="6" autocomplete="new-password" />
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">
+          <i class="fa-solid fa-user-plus"></i> Create Free Account
+        </button>
+      </form>
+
+      <div class="auth-footer">
+        <p><i class="fa-solid fa-lock" style="font-size: 11px;"></i> Passwords securely hashed with bcrypt in MongoDB.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       2. MAIN APPLICATION CONTAINER (Visible when user is authenticated)
+       ========================================================================= -->
+  <div id="app-container" style="display: none;">
+    
+    <!-- Sidebar Navigation -->
+    <aside id="sidebar" class="sidebar">
+      <div class="brand">
+        <div class="brand-icon">
+          <i class="fa-solid fa-bolt"></i>
+        </div>
+        <div class="brand-text">
+          <h1>Fit<span>Track</span></h1>
+          <span class="brand-tagline">Fitness Tracker</span>
+        </div>
+      </div>
+
+      <!-- Navigation Links -->
+      <nav class="nav-menu">
+        <a href="#dashboard" class="nav-link active" data-view="dashboard">
+          <i class="fa-solid fa-chart-pie"></i>
+          <span>Dashboard</span>
+        </a>
+        <a href="#add-workout" class="nav-link" data-view="add-workout">
+          <i class="fa-solid fa-circle-plus"></i>
+          <span>Add Workout</span>
+        </a>
+        <a href="#history" class="nav-link" data-view="history">
+          <i class="fa-solid fa-clock-rotate-left"></i>
+          <span>Workout History</span>
+        </a>
+        <a href="#analytics" class="nav-link" data-view="analytics">
+          <i class="fa-solid fa-chart-line"></i>
+          <span>Analytics & Goals</span>
+        </a>
+      </nav>
+
+      <!-- Sidebar Footer / User Profile & Database Status -->
+      <div class="sidebar-footer">
+        <div id="user-profile-badge" class="user-profile-badge">
+          <div id="nav-user-avatar" class="user-avatar">FT</div>
+          <div class="user-details">
+            <div class="user-name dynamic-user-name">Athlete</div>
+            <div id="nav-user-email" class="user-email">athlete@example.com</div>
+          </div>
+          <button id="btn-logout" class="btn-icon-logout" title="Sign Out">
+            <i class="fa-solid fa-right-from-bracket"></i>
+          </button>
+        </div>
+
+        <!-- Database status indicator -->
+        <div class="db-status-bar">
+          <span style="display: flex; align-items: center; gap: 6px;">
+            <span id="db-status-dot" class="status-dot online"></span>
+            <span id="db-status-text">Checking Database...</span>
+          </span>
+          <i class="fa-solid fa-database" style="opacity: 0.6;"></i>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Wrapper Content Area -->
+    <div class="main-wrapper">
+      
+      <!-- Top Header Bar -->
+      <header class="top-header">
+        <button id="mobile-menu-toggle" class="mobile-menu-btn" title="Toggle Navigation">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+
+        <div class="header-title">
+          <h2>FitTrack Dashboard</h2>
+          <p>Welcome, <span class="dynamic-user-name">Athlete</span> 👋</p>
+        </div>
+
+        <div class="header-actions">
+          <button id="btn-quick-add" class="btn btn-primary btn-sm">
+            <i class="fa-solid fa-plus"></i> Add Workout
+          </button>
+        </div>
+      </header>
+
+      <!-- Content Views Container -->
+      <main class="content-body">
+
+        <!-- ===================================================================
+             VIEW 1: PERSONALIZED DASHBOARD
+             =================================================================== -->
+        <section id="view-dashboard" class="app-view active-view">
+          
+          <!-- Weekly Goal Banner -->
+          <div class="goal-banner">
+            <div class="goal-content">
+              <div class="goal-header">
+                <h3><i class="fa-solid fa-bullseye" style="color: var(--accent-green);"></i> Weekly Workout Goal</h3>
+                <span id="goal-percent-badge" class="goal-badge">0% Completed</span>
+              </div>
+              <p id="goal-subtitle" class="goal-status-text">
+                Target: <strong id="goal-target">5</strong> workouts per week. You've logged <strong id="goal-workouts-count">0</strong> workouts this week.
+              </p>
+              <div class="progress-track">
+                <div id="goal-progress-bar" class="progress-bar-fill"></div>
+              </div>
+            </div>
+            <div>
+              <button id="btn-edit-goal" class="btn btn-secondary btn-sm">
+                <i class="fa-solid fa-pen-to-square"></i> Change Goal
+              </button>
+            </div>
+          </div>
+
+          <!-- Stats Overview Cards Grid -->
+          <div class="stats-grid">
+            <!-- Card 1: Total Workouts -->
+            <div class="stat-card">
+              <div class="stat-info">
+                <h3>Total Workouts</h3>
+                <div id="stat-total-workouts" class="stat-value">0</div>
+                <div class="stat-subtext">Lifetime recorded</div>
+              </div>
+              <div class="stat-icon purple">
+                <i class="fa-solid fa-dumbbell"></i>
+              </div>
+            </div>
+
+            <!-- Card 2: Total Duration -->
+            <div class="stat-card">
+              <div class="stat-info">
+                <h3>Total Duration</h3>
+                <div id="stat-total-duration" class="stat-value">0 min</div>
+                <div class="stat-subtext">Time exercising</div>
+              </div>
+              <div class="stat-icon cyan">
+                <i class="fa-solid fa-stopwatch"></i>
+              </div>
+            </div>
+
+            <!-- Card 3: Calories Burned -->
+            <div class="stat-card">
+              <div class="stat-info">
+                <h3>Calories Burned</h3>
+                <div id="stat-total-calories" class="stat-value">0 kcal</div>
+                <div class="stat-subtext">Total energy burned</div>
+              </div>
+              <div class="stat-icon orange">
+                <i class="fa-solid fa-fire"></i>
+              </div>
+            </div>
+
+            <!-- Card 4: Workouts This Week -->
+            <div class="stat-card">
+              <div class="stat-info">
+                <h3>This Week</h3>
+                <div id="stat-this-week" class="stat-value">0</div>
+                <div class="stat-subtext">Workouts logged</div>
+              </div>
+              <div class="stat-icon green">
+                <i class="fa-solid fa-calendar-check"></i>
+              </div>
+            </div>
+          </div>
+
+          <!-- Dashboard Charts & Activity Section -->
+          <div class="dashboard-grid">
+            <!-- Weekly Duration Chart -->
+            <div class="card">
+              <div class="card-header">
+                <h3><i class="fa-solid fa-chart-column"></i> Weekly Workout Progress</h3>
+                <span style="font-size: 12px; color: var(--text-muted);">Current Week</span>
+              </div>
+              <div class="card-body">
+                <div class="chart-container">
+                  <canvas id="weeklyProgressChart"></canvas>
+                </div>
+              </div>
+            </div>
+
+            <!-- Recent Workouts List -->
+            <div class="card">
+              <div class="card-header">
+                <h3><i class="fa-solid fa-history"></i> Recent Workouts</h3>
+                <button class="btn btn-secondary btn-sm" onclick="app.switchView('history')">
+                  View All
+                </button>
+              </div>
+              <div class="card-body">
+                <div id="dashboard-recent-list" class="recent-list">
+                  <!-- Populated dynamically by dashboard.js -->
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- ===================================================================
+             VIEW 2: ADD WORKOUT FORM
+             =================================================================== -->
+        <section id="view-add-workout" class="app-view">
+          <div class="card form-card">
+            <div class="card-header">
+              <h3><i class="fa-solid fa-circle-plus"></i> Record New Workout</h3>
+            </div>
+            <div class="card-body">
+              <form id="add-workout-form">
+                <div class="form-grid">
+                  <!-- Workout Name -->
+                  <div class="form-group full-width">
+                    <label class="form-label" for="workout-name">Workout Name *</label>
+                    <input type="text" id="workout-name" name="name" class="form-control" placeholder="e.g. Morning 5km Run, Upper Body Heavy, Vinyasa Flow" required maxlength="100" />
+                  </div>
+
+                  <!-- Workout Type -->
+                  <div class="form-group">
+                    <label class="form-label" for="workout-type">Workout Type *</label>
+                    <select id="workout-type" name="type" class="form-control" required>
+                      <option value="Cardio">🏃 Cardio</option>
+                      <option value="Strength">🏋️ Strength</option>
+                      <option value="Running">👟 Running</option>
+                      <option value="Cycling">🚴 Cycling</option>
+                      <option value="Yoga">🧘 Yoga</option>
+                      <option value="Other">⚡ Other</option>
+                    </select>
+                  </div>
+
+                  <!-- Date -->
+                  <div class="form-group">
+                    <label class="form-label" for="workout-date">Workout Date *</label>
+                    <input type="date" id="workout-date" name="date" class="form-control" required />
+                  </div>
+
+                  <!-- Duration -->
+                  <div class="form-group">
+                    <label class="form-label" for="workout-duration">Duration (Minutes) *</label>
+                    <input type="number" id="workout-duration" name="duration" class="form-control" placeholder="e.g. 45" min="1" max="1440" required />
+                    <div class="form-help">Enter workout time in minutes.</div>
+                  </div>
+
+                  <!-- Calories Burned -->
+                  <div class="form-group">
+                    <label class="form-label" for="workout-calories">Calories Burned (kcal) *</label>
+                    <input type="number" id="workout-calories" name="calories" class="form-control" placeholder="e.g. 350" min="0" max="20000" required />
+                    <div class="form-help">Estimated energy expenditure.</div>
+                  </div>
+
+                  <!-- Notes -->
+                  <div class="form-group full-width">
+                    <label class="form-label" for="workout-notes">Optional Notes</label>
+                    <textarea id="workout-notes" name="notes" class="form-control" rows="3" placeholder="Felt energetic today! Increased bench press by 5kg..." maxlength="500"></textarea>
+                  </div>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 10px;">
+                  <button type="button" class="btn btn-secondary" onclick="app.switchView('dashboard')">
+                    Cancel
+                  </button>
+                  <button type="submit" class="btn btn-primary">
+                    <i class="fa-solid fa-floppy-disk"></i> Save Workout
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================================================================
+             VIEW 3: WORKOUT HISTORY & LOGS
+             =================================================================== -->
+        <section id="view-history" class="app-view">
+          
+          <!-- Filters & Search Toolbar -->
+          <div class="filter-bar">
+            <div class="filter-group">
+              <!-- Search -->
+              <div class="search-input-box">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="filter-search" class="form-control" placeholder="Search workout or notes..." />
+              </div>
+
+              <!-- Type Filter -->
+              <select id="filter-type" class="form-control" style="width: auto; min-width: 150px;">
+                <option value="All">All Types</option>
+                <option value="Cardio">Cardio</option>
+                <option value="Strength">Strength</option>
+                <option value="Running">Running</option>
+                <option value="Cycling">Cycling</option>
+                <option value="Yoga">Yoga</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+
+            <!-- Date Range Filters -->
+            <div class="filter-group">
+              <input type="date" id="filter-start-date" class="form-control" style="width: auto;" title="Start Date" />
+              <span style="color: var(--text-muted); font-size: 13px;">to</span>
+              <input type="date" id="filter-end-date" class="form-control" style="width: auto;" title="End Date" />
+              
+              <button id="btn-reset-filters" class="btn btn-secondary btn-sm" title="Reset all filters">
+                <i class="fa-solid fa-rotate-left"></i> Reset
+              </button>
+            </div>
+          </div>
+
+          <!-- History Table Card -->
+          <div class="card">
+            <div class="card-header">
+              <h3><i class="fa-solid fa-list-check"></i> Workout History</h3>
+              <span id="workouts-count-badge" class="badge" style="background-color: rgba(255, 255, 255, 0.08); color: var(--text-secondary);">
+                0 Workouts
+              </span>
+            </div>
+
+            <div class="table-responsive">
+              <table class="workout-table">
+                <thead>
+                  <tr>
+                    <th>Workout</th>
+                    <th>Type</th>
+                    <th>Duration</th>
+                    <th>Calories</th>
+                    <th>Date</th>
+                    <th style="width: 100px;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="workouts-table-body">
+                  <!-- Populated dynamically by workouts.js -->
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Empty State Container -->
+            <div id="workouts-empty-state" class="empty-state" style="display: none;">
+              <div class="empty-state-icon">
+                <i class="fa-solid fa-dumbbell"></i>
+              </div>
+              <h3>No Workouts Found</h3>
+              <p>There are no workout entries matching your filter criteria. Log a new session to get started!</p>
+              <button class="btn btn-primary" onclick="app.switchView('add-workout')">
+                <i class="fa-solid fa-plus"></i> Add Workout
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================================================================
+             VIEW 4: PROGRESS & ANALYTICS
+             =================================================================== -->
+        <section id="view-analytics" class="app-view">
+          <div class="dashboard-grid">
+            
+            <!-- Type Breakdown Donut Chart -->
+            <div class="card">
+              <div class="card-header">
+                <h3><i class="fa-solid fa-chart-pie"></i> Workout Distribution by Type</h3>
+              </div>
+              <div class="card-body">
+                <div class="chart-container">
+                  <canvas id="workoutTypeChart"></canvas>
+                </div>
+              </div>
+            </div>
+
+            <!-- Goal & Consistency Info -->
+            <div class="card">
+              <div class="card-header">
+                <h3><i class="fa-solid fa-medal"></i> Goal & Consistency</h3>
+              </div>
+              <div class="card-body">
+                <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 20px;">
+                  Consistency is key in achieving lasting fitness results. Monitor your weekly frequency and adjust your target anytime.
+                </p>
+
+                <div style="background-color: rgba(255, 255, 255, 0.03); border-radius: 12px; padding: 18px; border: 1px solid var(--border-color); margin-bottom: 20px;">
+                  <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 4px;">Recommended Target:</div>
+                  <div style="font-size: 15px; font-weight: 700; color: var(--accent-green);">
+                    3 to 5 workouts per week
+                  </div>
+                  <div style="font-size: 12px; color: var(--text-secondary); margin-top: 6px;">
+                    Allows optimal muscular recovery and cardiovascular conditioning.
+                  </div>
+                </div>
+
+                <button class="btn btn-primary" onclick="document.getElementById('goal-modal').classList.add('show')">
+                  <i class="fa-solid fa-sliders"></i> Adjust Weekly Target
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       3. MODALS (Edit Workout, Delete Confirmation, Goal Setting)
+       ========================================================================= -->
+  
+  <!-- Edit Workout Modal -->
+  <div id="edit-modal" class="modal-backdrop">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-pen"></i> Edit Workout</h3>
+        <button type="button" class="modal-close-btn" onclick="workouts.closeEditModal()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <form id="edit-workout-form">
+        <div class="modal-body">
+          <div class="form-grid">
+            <div class="form-group full-width">
+              <label class="form-label" for="edit-name">Workout Name *</label>
+              <input type="text" id="edit-name" name="edit-name" class="form-control" required />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="edit-type">Workout Type *</label>
+              <select id="edit-type" name="edit-type" class="form-control" required>
+                <option value="Cardio">Cardio</option>
+                <option value="Strength">Strength</option>
+                <option value="Running">Running</option>
+                <option value="Cycling">Cycling</option>
+                <option value="Yoga">Yoga</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="edit-date">Date *</label>
+              <input type="date" id="edit-date" name="edit-date" class="form-control" required />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="edit-duration">Duration (Minutes) *</label>
+              <input type="number" id="edit-duration" name="edit-duration" class="form-control" min="1" required />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="edit-calories">Calories Burned (kcal) *</label>
+              <input type="number" id="edit-calories" name="edit-calories" class="form-control" min="0" required />
+            </div>
+
+            <div class="form-group full-width">
+              <label class="form-label" for="edit-notes">Notes</label>
+              <textarea id="edit-notes" name="edit-notes" class="form-control" rows="2" maxlength="500"></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="workouts.closeEditModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> Update Workout</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Delete Workout Confirmation Modal -->
+  <div id="delete-modal" class="modal-backdrop">
+    <div class="modal-box" style="max-width: 440px;">
+      <div class="modal-header">
+        <h3 style="color: var(--accent-red);"><i class="fa-solid fa-triangle-exclamation"></i> Delete Workout</h3>
+        <button type="button" class="modal-close-btn" onclick="workouts.closeDeleteModal()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 12px;">
+          Are you sure you want to permanently delete this workout record?
+        </p>
+        <div style="padding: 12px; background-color: rgba(239, 68, 68, 0.08); border-radius: var(--radius-sm); border: 1px solid rgba(239, 68, 68, 0.2); font-weight: 600; color: var(--text-primary);" id="delete-workout-name">
+          Workout Name
+        </div>
+        <p style="font-size: 12px; color: var(--text-muted); margin-top: 10px;">
+          This action cannot be undone and will update your dashboard statistics.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="workouts.closeDeleteModal()">Cancel</button>
+        <button type="button" id="btn-confirm-delete" class="btn btn-danger">
+          <i class="fa-solid fa-trash-can"></i> Delete
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Goal Modal -->
+  <div id="goal-modal" class="modal-backdrop">
+    <div class="modal-box" style="max-width: 440px;">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-bullseye"></i> Set Weekly Workout Goal</h3>
+        <button type="button" class="modal-close-btn" onclick="document.getElementById('goal-modal').classList.remove('show')">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <form id="goal-form">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label" for="input-weekly-goal">Target Workouts per Week</label>
+            <input type="number" id="input-weekly-goal" class="form-control" min="1" max="21" value="5" required />
+            <div class="form-help">Enter a number between 1 and 21 workouts per week.</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="document.getElementById('goal-modal').classList.remove('show')">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> Save Goal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/api.js"></script>
+  <script src="js/dashboard.js"></script>
+  <script src="js/workouts.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

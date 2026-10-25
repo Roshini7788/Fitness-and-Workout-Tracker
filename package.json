@@ -1,0 +1,32 @@
+{
+  "name": "fittrack",
+  "version": "1.0.0",
+  "description": "FitTrack – Full Stack Fitness & Workout Tracker",
+  "main": "server/server.js",
+  "scripts": {
+    "start": "node server/server.js",
+    "dev": "nodemon server/server.js"
+  },
+  "keywords": [
+    "fitness",
+    "workout",
+    "tracker",
+    "fullstack",
+    "express",
+    "mongodb"
+  ],
+  "author": "Roshini7788",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.9",
+    "express": "^5.3.0",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.11.4"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
